@@ -33,7 +33,7 @@ We designed our microcontroller in the following stages:
 
 
 #### RTL View
-[!image](https://github.com/DC-005/RISC-V_Microprocessor_32bit/blob/main/Images/RTL_View.jpg)
+![image](https://github.com/DC-005/RISC-V_Microprocessor_32bit/blob/main/Images/RTL_View.jpg)
 
 #### The microarchitecture consists of:
 
