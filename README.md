@@ -34,6 +34,7 @@ We designed our microcontroller in the following stages:
 
 #### RTL View
 
+
 #### The microarchitecture consists of:
 
 - Instruction Memory: for fetching RISC-V instructions
