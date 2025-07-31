@@ -21,7 +21,7 @@
 
 
 module control_d(clk, reset,clr, op,funct3,funct7, RegWriteE, ResultSrcE, MemWriteE, JumpE, BranchE, 
-ALUControlE, ALUSrcE,ImmSrcD);
+ALUControlE, ALUSrcE,ImmSrcD,functE);
 input clk,clr, reset ,funct7;
 input [2:0] funct3;
 input [6:0] op;
@@ -29,6 +29,7 @@ output [1:0] ImmSrcD;
 output reg RegWriteE, MemWriteE, JumpE, BranchE, ALUSrcE;
 output reg [1:0]  ResultSrcE;
 output reg [2:0] ALUControlE;
+output reg [2:0] functE;
 wire [1:0] ALUOp;
 wire RegWriteD, MemWriteD, JumpD, BranchD, ALUSrcD;
 wire [1:0] ResultSrcD;
@@ -47,6 +48,7 @@ begin
    RegWriteE <= 0;
    JumpE <= 0;
    ALUControlE <= 0;
+   functE<=0;
 end
 else
 begin
@@ -57,6 +59,7 @@ begin
    RegWriteE <= RegWriteD;
    JumpE <= JumpD;
    ALUControlE <= ALUControlD;
+   functE<= funct3;
 end
 end
 endmodule
