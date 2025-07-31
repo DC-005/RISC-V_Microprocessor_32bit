@@ -49,6 +49,3 @@ Data_Memory dmem(clk, reset, memWriteM,
     
 imem imem1(pcF, InstrF); 
 endmodule
-
-
-
