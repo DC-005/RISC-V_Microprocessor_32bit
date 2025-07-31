@@ -1,20 +1,20 @@
 `timescale 1ns/1ps
 
-module data_Path(CLK,rst,InstrD,ImmSrcD,PCD,PCPlus4D,RS1_E,ResultSrcW,RD,
+module data_Path(CLK,rst,InstrD,ImmSrcD,PCD,PCPlus4D,RS1_E,functE, functM, ResultSrcW,RD,
 RS2_E, RD_E,RegWriteW,flushE,ForwardA_E,ForwardB_E,
-ALUControlE,ALUSrcE, RD_M,PCPlus4M, WriteDataM, ALU_ResultM,RDW,
-PCTargetE,ZeroE);
-    input CLK, rst, RegWriteW,ALUSrcE, flushE;
+ALUControlE,ALUSrcE, RD_M,PCPlus4M, WriteDataMn, ALU_ResultM,RDW,
+PCTargetE,branch_taken);
+    input CLK, rst, RegWriteW,ALUSrcE, flushE, functM;
     input [31:0] InstrD, PCD, PCPlus4D,RD;
     input [1:0] ForwardA_E, ForwardB_E,ImmSrcD,ResultSrcW;
-    input [2:0] ALUControlE;
-    output ZeroE;
+    input [2:0] ALUControlE, functE;
+    output branch_taken;
     output [4:0] RD_M,RS1_E, RS2_E, RD_E; 
     output [31:0] PCTargetE;
     output [4:0] RDW;
-    output [31:0] PCPlus4M, WriteDataM, ALU_ResultM;
-    wire [31:0] ResultW;
-    
+    output [31:0] PCPlus4M, ALU_ResultM;
+    output reg [31:0] WriteDataMn;
+    wire [31:0] ResultW, WriteDataM;
 
     // Wires
     wire [31:0] RD1_D, RD2_D, Imm_Ext_D;
@@ -22,13 +22,13 @@ PCTargetE,ZeroE);
     wire [31:0] PCE, PCPlus4E;
     wire [31:0] Src_A, Src_B_inter, Src_B;
     wire [31:0] ResultE;
-    wire ZeroE1;
+    wire branch_taken1;
     wire [31:0] PCPlus4W, WriteDataW, ALUResultW,ReadDataW;
 
 
 
     // Register
-    reg [31:0] RD1_D_r, RD2_D_r, Imm_Ext_D_r;
+    reg [31:0] RD1_D_r, RD2_D_r, Imm_Ext_D_r, RDn;
     reg [4:0] RD_D_r, RS1_D_r, RS2_D_r;
     reg [31:0] PCD_r, PCPlus4D_r;
     reg RegWriteE_r, MemWriteE_r, ResultSrcE_r;
@@ -102,8 +102,8 @@ PCTargetE,ZeroE);
             .SrcAE(Src_A),
             .SrcBE(Src_B),
             .ALUResult(ResultE),
-            .ALUControlE(ALUControlE),
-            .ZeroE(ZeroE1)
+            .ALUControlE(ALUControlE),.functE(functE),
+            .branch_taken(branch_taken1)
             );
     pcAdder branch_adder (
             .a(PCE),
@@ -128,12 +128,30 @@ PCTargetE,ZeroE);
     
 
     // Output Assignments
-    assign ZeroE = ZeroE1;
+    assign branch_taken = branch_taken1;
     assign RD_M = RD_E_r;
     assign PCPlus4M = PCPlus4E_r;
     assign WriteDataM = RD2_E_r;
+        always @(*) begin
+        case (functM)//assign out = {{4{in[11]}}, in};
+        3'b010: WriteDataMn <= WriteDataM; // sw
+        3'b001: WriteDataMn <= WriteDataM[15:0]; // sh
+        3'b000: WriteDataMn <= WriteDataM[7:0]; // sb
+        default: WriteDataMn <= 3'bxxx;
+    endcase
+    end
     assign ALU_ResultM = ResultE_r;
-    flopr  #(101) regW(CLK, rst,{ALU_ResultM, RD ,RD_M, PCPlus4M}, {ALUResultW, ReadDataW, RDW, PCPlus4W});
+        always @(*) begin
+        case (functM)//assign out = {{4{in[11]}}, in};
+        3'b010: RDn <= RD; // lw
+        3'b001: RDn <= {{16{RD[15]}},RD[15:0]}; // lh
+        3'b000: RDn <= {{24{RDn[7]}},RDn[7:0]}; // lb
+        3'b100: RDn <= RDn[7:0]; // lbu
+        3'b101: RDn <= RDn[15:0]; // lhu
+        default: RDn <= 3'bxxx;
+    endcase
+    end
+    flopr  #(101) regW(CLK, rst,{ALU_ResultM, RDn ,RD_M, PCPlus4M}, {ALUResultW, ReadDataW, RDW, PCPlus4W});
     Mux3 resulta(
                         .a(ALUResultW),
                         .b(ReadDataW),
@@ -143,3 +161,4 @@ PCTargetE,ZeroE);
                         );
 
 endmodule
+
